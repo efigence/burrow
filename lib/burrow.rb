@@ -35,5 +35,15 @@ module Burrow
     def get_connection url
       @@conn_cache[url] ||= Bunny.new(url).tap { |conn| conn.start }
     end
+
+    def symbolize_keys hash
+      Hash[hash.map do |key, value|
+        if key.respond_to?(:to_sym)
+          [key.to_sym, value]
+        else
+          [key, value]
+        end
+      end]
+    end
   end
 end
