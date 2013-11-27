@@ -46,7 +46,7 @@ dest:
 
 Both `source` and `dest` are topology description. Each consists of two keys: `url` which is the AMQP url to connect to, and `topology` which is a list containing all the steps to build your topology. Each distinct `url` will be connected to exactly once. Each topology list will be built on a separate AMQP channel.
 
-Each element in that list has two mandatory keys: `name` and `type`, the rest is optional. First, `type`. It's one of `direct`, `fanout`, `topic`, `headers` and `queue` (actually, it's only a method name to call on `Bunny::Channel`). The first four create exchanges, and the last one, obviously, creates a queue.
+Each element in that list has two mandatory keys: `name` and `type`, the rest is optional. First, `type`. It's one of `direct`, `fanout`, `topic`, `headers` and `queue` (actually, it's only a method name to call on `Bunny::Channel`). The first four create exchanges, and the last one, obviously, creates a queue. Blank names are valid only for queues, and result in the broker (server) generating a unique random name for your queue.
 
 If you need to pass any options while creating a queue on exchange, do so using `options`. The keywords here are passed as symbols, as specified by Bunny.
 
