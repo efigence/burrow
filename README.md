@@ -44,7 +44,7 @@ dest:
     type: fanout
 ```
 
-Both `source` and `dest` are topology description. Each consists of two keys: `url` which is the AMQP url to connect to, and `topology` which is a list containing all the steps to build your topology.
+Both `source` and `dest` are topology description. Each consists of two keys: `url` which is the AMQP url to connect to, and `topology` which is a list containing all the steps to build your topology. Each distinct `url` will be connected to exactly once. Each topology list will be built on a separate AMQP channel.
 
 Each element in that list has two mandatory keys: `name` and `type`, the rest is optional. First, `type`. It's one of `direct`, `fanout`, `topic`, `headers` and `queue` (actually, it's only a method name to call on `Bunny::Channel`). The first four create exchanges, and the last one, obviously, creates a queue.
 
@@ -53,6 +53,7 @@ If you need to pass any options while creating a queue on exchange, do so using 
 Next, where such semantics apply, any element can bind to anything previously defined. In Bunny+RabbitMQ this means everywhere, since both queues and exchanges can bind to other exchanges. Any options, like routing keys for direct and topic exchanges, or arguments for header exchanges can be passed in `bind_options`. Again, they are passed as symbols, as specified by Bunny.
 
 Note that you don't need to chain everything, the list is processed from top to bottom, and names become resolvable (in `bind` declarations) in the same order. It is perfectly fine to declare a series of queues and exchanges and leave them unbound.
+
 
 # API
 
