@@ -1,5 +1,6 @@
+require 'burrow/version'
+
 module Burrow
-  VERSION = "0.1.0"
   @@conn_cache = {}
 
   class << self
