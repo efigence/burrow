@@ -4,7 +4,13 @@ module Burrow
   @@conn_cache = {}
 
   class << self
-    def setup config
+    # Sets up a connection and exchange/queue topologies.
+    #
+    # @param config [Hash] configuration hash, must include 'url' and 'topology' keys. See README for topology descriptions.
+    # @param force [Boolean] (optional) discard a cached connection for this particular url, useful in case of network errors
+    # @return [Bunny::Exchange, Bunny::Queue] final object in the topology list
+    def setup config, force=false
+      drop_connection_from_cache(config['url']) if force
       conn = get_connection config['url']
       channel = conn.create_channel
       setup_topology channel, config['topology']
@@ -34,6 +40,10 @@ module Burrow
 
     def get_connection url
       @@conn_cache[url] ||= Bunny.new(url).tap { |conn| conn.start }
+    end
+
+    def drop_connection_from_cache url
+      @@conn_cache.delete url
     end
 
     def symbolize_keys hash

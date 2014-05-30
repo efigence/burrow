@@ -65,6 +65,8 @@ source_q = Burrow.setup cfg['source'] # returns a queue named `my_queue`, after 
 dest_exch = Burrow.setup cfg['dest'] # returns an exchange named `distinct_exchange`, not bound to anything
 ```
 
+The method also takes an optional second argument, a boolean to force reconnection (as opposed to using a cached connection for the same url).
+
 Keep in mind that `Burrow.setup` returns only the *last* element of a topology list, since that's what 90% cases need. A future version might add an alternative method that returns the entire list.
 
 **All Bunny and RabbitMQ semantics still apply**. Redeclaring an existing queue or exchange with a different type or options is an error, and will throw a `Bunny::ChannelLevelException`. Any already estabilished bindings are never altered.
