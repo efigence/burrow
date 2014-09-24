@@ -2,6 +2,7 @@ require 'burrow/version'
 
 module Burrow
   @@conn_cache = {}
+  class Error < StandardError; end
 
   class << self
     # Sets up a connection and exchange/queue topologies.
@@ -23,8 +24,14 @@ module Burrow
       topology.map do |defn|
         obj, name = create_object channel, defn
         ns[name] = obj
+        
         if bind_to = defn['bind_to']
-          obj.bind ns[bind_to], symbolize_keys(defn['bind_options'] || {})
+          begin
+            bind_opts = symbolize_keys(defn['bind_options'] || {})
+            obj.bind ns[bind_to], bind_opts
+          rescue Bunny::Exception
+            raise Error.new("Unable to bind #{obj.name} to #{bind_to} with #{bind_opts}, original cause: #{$!}")
+          end
         end
         obj
       end.last
