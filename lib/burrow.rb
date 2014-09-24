@@ -28,7 +28,8 @@ module Burrow
         if bind_to = defn['bind_to']
           begin
             bind_opts = symbolize_keys(defn['bind_options'] || {})
-            obj.bind ns[bind_to], bind_opts
+            dest = ns[bind_to] || bind_to # If not defined earlier, pass as string and rely on server
+            obj.bind dest, bind_opts
           rescue Bunny::Exception
             raise Error.new("Unable to bind #{obj.name} to #{bind_to} with #{bind_opts}, original cause: #{$!}")
           end
