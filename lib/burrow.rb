@@ -76,7 +76,7 @@ module Burrow
     def get_client_info(config)
       opts = Bunny::Session::DEFAULT_CLIENT_PROPERTIES.dup
       if config[:client].is_a? Hash
-        opts.merge! symbolize_keys(config['client'])
+        opts.merge! symbolize_keys(config[:client])
       end
       opts
     end
