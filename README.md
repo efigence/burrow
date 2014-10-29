@@ -42,17 +42,28 @@ dest:
   topology:
   - name: distinct_exchange
     type: fanout
+
+multihost:
+  url: *default_queue
+  hosts: [192.168.80.35, 192.168.80.36]
+  topology:
+  - name: replicated_queue
+    type: queue
 ```
 
 Both `source` and `dest` are topology description. Each consists of two keys: `url` which is the AMQP url to connect to, and `topology` which is a list containing all the steps to build your topology. Each distinct `url` will be connected to exactly once. Each topology list will be built on a separate AMQP channel.
+
+Since Bunny 1.5 there is support for connecting to multiple AMQP servers (for failover and load-balancing). To use it, supply a `hosts` key that is an array of host names or addresses. When using that, the host given in `url` is overwritten (doesn't even have to be on the list), and Bunny's semantics for choosing which host to connect apply. For backward compatibility with older versions of Burrow, it needs to be on the list though.
 
 Each element in that list has two mandatory keys: `name` and `type`, the rest is optional. First, `type`. It's one of `direct`, `fanout`, `topic`, `headers` and `queue` (actually, it's only a method name to call on `Bunny::Channel`). The first four create exchanges, and the last one, obviously, creates a queue. Blank names are valid only for queues, and result in the broker (server) generating a unique random name for your queue.
 
 If you need to pass any options while creating a queue on exchange, do so using `options`. The keywords here are converted to symbols, as specified by Bunny.
 
-Next, where such semantics apply, any element can bind to anything previously defined. In Bunny+RabbitMQ this means everywhere, since both queues and exchanges can bind to other exchanges. Any options, like routing keys for direct and topic exchanges, or arguments for header exchanges can be passed in `bind_options`. Again, they are converted to symbols, as specified by Bunny.
+Next, where such semantics apply, any element can bind to either previously defined elements or anything that exists on the server. In Bunny+RabbitMQ this means everywhere, since both queues and exchanges can bind to other exchanges. Any options, like routing keys for direct and topic exchanges, or arguments for header exchanges can be passed in `bind_options`. Again, they are converted to symbols, as specified by Bunny.
 
 Note that you don't need to chain everything, the list is processed from top to bottom, and names become resolvable (in `bind` declarations) in the same order. It is perfectly fine to declare a series of queues and exchanges and leave them unbound.
+
+Allowing bindings to already existing (but not defined in topology) objects may lead to mysterious errors. Take care when using that option. If a name to bind to doesn't exist, and there was no declaration for it earlier, Bunny might throw an exception about not being able to bind to default exchange.
 
 
 # API

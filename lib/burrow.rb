@@ -9,27 +9,29 @@ module Burrow
   class << self
     # Sets up a connection and exchange/queue topologies.
     #
-    # @param config [Hash] configuration hash, must include 'url' and 'topology' keys. See README for topology descriptions.
+    # @param config [Hash] configuration hash, must include 'url' and 'topology' keys. May include a 'hosts' key. See README for topology descriptions.
     # @param force [Boolean] (optional) discard a cached connection for this particular url, useful in case of network errors
     # @return [Bunny::Exchange, Bunny::Queue] final object in the topology list
     def setup(config, force=false)
-      drop_connection_from_cache(config['url']) if force
-      conn = get_connection config['url'], get_client_info(config)
+      cfg = symbolize_keys(config)
+      drop_connection_from_cache(cfg[:url]) if force
+      conn = get_connection cfg[:url], cfg[:hosts], get_client_info(cfg)
       channel = conn.create_channel
-      setup_topology channel, config['topology']
+      setup_topology channel, cfg[:topology]
     end
 
     private
 
     def setup_topology(channel, topology)
       ns = {}
-      topology.map do |defn|
+      topology.map do |definition|
+        defn = symbolize_keys(definition)
         obj, name = create_object channel, defn
         ns[name] = obj
         
-        if bind_to = defn['bind_to']
+        if bind_to = defn[:bind_to]
           begin
-            bind_opts = symbolize_keys(defn['bind_options'] || {})
+            bind_opts = symbolize_keys(defn[:bind_options] || {})
             dest = ns[bind_to] || bind_to # If not defined earlier, pass as string and rely on server
             obj.bind dest, bind_opts
           rescue Bunny::Exception
@@ -41,15 +43,28 @@ module Burrow
     end
 
     def create_object(channel, defn)
-      method = defn['type'].to_sym
-      name = defn['name'] || ''
-      opts = symbolize_keys(defn['options'] || {})
+      method = defn[:type].to_sym
+      name = defn[:name] || ''
+      opts = symbolize_keys(defn[:options] || {})
       obj = channel.send(method, name, opts)
       return [obj, obj.name]
     end
 
-    def get_connection(url, client_properties=nil)
+    # Connect, or use a cached connection.
+    # get_connection(url)
+    # get_connection(url, hosts, client_properties)
+    # hosts and client_properties are both optional
+    # hosts is a array of names for RabbitMQ 1.5's multiple host support
+    # client_properties is a hash like Bunny::Session::DEFAULT_CLIENT_PROPERTIES (see #get_client_info)
+    def get_connection(url, *args)
       options = {}
+      if args.first.is_a? Array
+        hosts = args.shift
+      else
+        hosts = nil
+      end
+      client_properties = args.shift
+      options.merge!(hosts: hosts.to_a) if hosts.is_a? Enumerable
       options.merge!(properties: client_properties) if client_properties.is_a? Hash
       @@conn_cache[url] ||= Bunny.new(url, options).tap { |conn| conn.start }
     end
@@ -60,7 +75,7 @@ module Burrow
 
     def get_client_info(config)
       opts = Bunny::Session::DEFAULT_CLIENT_PROPERTIES.dup
-      if config['client'].is_a? Hash
+      if config[:client].is_a? Hash
         opts.merge! symbolize_keys(config['client'])
       end
       opts
