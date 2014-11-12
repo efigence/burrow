@@ -57,6 +57,7 @@ module Burrow
     # hosts is a array of names for RabbitMQ 1.5's multiple host support
     # client_properties is a hash like Bunny::Session::DEFAULT_CLIENT_PROPERTIES (see #get_client_info)
     def get_connection(url, *args)
+      options = {}
       case args.size
       when 0
         hosts = client_properties = nil
