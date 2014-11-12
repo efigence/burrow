@@ -57,13 +57,22 @@ module Burrow
     # hosts is a array of names for RabbitMQ 1.5's multiple host support
     # client_properties is a hash like Bunny::Session::DEFAULT_CLIENT_PROPERTIES (see #get_client_info)
     def get_connection(url, *args)
-      options = {}
-      if args.first.is_a? Array
-        hosts = args.shift
-      else
-        hosts = nil
+      case args.size
+      when 0
+        hosts = client_properties = nil
+      when 1
+        obj = args.first
+        if obj.is_a? Hash
+          client_properties = obj
+        elsif obj.is_a? Array
+          hosts = obj
+        else
+          hosts = client_properties = nil
+        end
+      when 2
+        hosts, client_properties = args
       end
-      client_properties = args.shift
+
       options.merge!(hosts: hosts.to_a) if hosts.is_a? Enumerable
       options.merge!(properties: client_properties) if client_properties.is_a? Hash
       @@conn_cache[url] ||= Bunny.new(url, options).tap { |conn| conn.start }
