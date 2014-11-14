@@ -43,10 +43,22 @@ module Burrow
     end
 
     def create_object(channel, defn)
-      method = defn[:type].to_sym
+      method = defn[:type].to_sym rescue nil
       name = defn[:name] || ''
       opts = symbolize_keys(defn[:options] || {})
-      obj = channel.send(method, name, opts)
+
+      if opts[:no_declare] && method.nil?
+        # Assuming we wanted an exchange
+        method = :exchange
+      end
+
+      if channel.respond_to? method
+        # NOTE: type: queue falls in here, works as expected
+        obj = channel.send(method, name, opts)
+      else
+        # Extra exchange typess, where bunny doesn't have a shortcut method
+        obj = channel.exchange(name, opts.merge(type: type))
+      end
       return [obj, obj.name]
     end
 
